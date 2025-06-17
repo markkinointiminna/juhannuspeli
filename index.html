@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Juhannuspeli</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: url('Maisema.jpg') no-repeat center center fixed;
+  background-size: cover;
+  background-color: #e6f3fa;
+}
+#overlay {
+  position: fixed;
+  z-index: 12;
+  width: 100vw;
+  height: 100vh;
+  top: 0; left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* EI background-riviä tänne! */
+}
+#ohjeetbox {
+  max-width: 350px;
+  background: #fffefdcc;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px #aaccff70;
+  padding: 38px 30px 36px 30px;
+  text-align: center;
+  font-size: 1.13em;
+  font-family: Arial, sans-serif;
+  z-index: 2;
+    }
+    #topBar {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      width: 98vw; max-width: 420px; display: flex; justify-content: space-between; z-index: 2;
+    }
+    #score, #timer {
+      font-size: 1.2em; font-weight: bold; background: #fff8;
+      padding: 6px 20px; border-radius: 8px; margin: 2px; box-shadow: 0 2px 10px #b5c8e9;
+    }
+    #endMsg {
+      position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 2em; font-weight: bold; color: #15679b; background: #fffefaec;
+      border-radius: 15px; padding: 30px 36px; text-align: center; display: none; z-index: 10;
+      box-shadow: 0 8px 48px #aaaa;
+    }
+    #feedback {
+      position: fixed; left: 0; right: 0; top: 100px; z-index: 9;
+      text-align: center; font-size: 1.6em; font-weight: bold;
+      color: #158557; text-shadow: 0 2px 10px #fff, 0 1px 4px #29975533;
+      pointer-events: none; opacity: 0; transition: opacity 0.22s;
+    }
+    #overlay {
+        background: url('Maisema.jpg') no-repeat center center fixed;
+  background-size: cover;
+  background-color: #e6f3fa;
+    }
+    #ohjeetbox {
+      max-width: 350px; background: #fffefdcc; border-radius: 16px;
+      box-shadow: 0 4px 24px #aaccff70; padding: 38px 30px 36px 30px;
+      text-align: center; font-size: 1.13em; font-family: Arial, sans-serif;
+    }
+    #ohjeetbox h2 {
+      color: #2360a9; margin-top: 0; margin-bottom: 13px;
+      font-size: 2em; letter-spacing: 2px; font-family: Arial Black, Arial, sans-serif;
+    }
+    #ohjeetbox button {
+      margin-top: 28px; background: #43a047; color: white; font-size: 1.1em;
+      border: none; border-radius: 8px; padding: 10px 34px; cursor: pointer;
+      box-shadow: 0 2px 10px #0002; transition: background 0.18s;
+    }
+    #ohjeetbox button:hover { background: #2a7832; }
+    #gameCanvas {
+      background: #f0ffe0;
+      display: block;
+      margin: 56px auto 0 auto;
+      border: 2px solid #444;
+      border-radius: 14px;
+      box-shadow: 0 8px 32px #b6cfe955;
+      position: relative;
+      width: 98vw;
+      max-width: 420px;
+      min-width: 240px;
+      height: 70vw;
+      max-height: 650px;
+      min-height: 360px;
+      touch-action: none;
+    }
+    #uudestaanBtn {
+      margin-top: 26px; background: #43a047; color: #fff; font-size: 1em;
+      border: none; border-radius: 8px; padding: 10px 28px; cursor: pointer;
+      box-shadow: 0 2px 10px #0002; transition: background 0.18s; display: none;
+    }
+    #uudestaanBtn:hover { background: #2a7832; }
+    @media (max-width: 480px) {
+      #topBar { width: 97vw; }
+    }
+      #footerlink {
+  position: fixed;
+  left: 0;
+  bottom: 10px;
+  width: 100vw;
+  text-align: center;
+  z-index: 100;
+  font-size: 0.97em;
+  color: #15679b;
+  padding-bottom: 6px;
+  pointer-events: auto;
+}
+#footerlink a {
+  color: #15679b;
+  text-decoration: underline;
+  background: #fffefdcc;
+  padding: 4px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #bbb2;
+  transition: background 0.18s;
+}
+#footerlink a:hover {
+  background: #c3e8ffcc;
+}
+  </style>
+</head>
+<body>
+  <div id="topBar">
+    <div id="score">Pisteet: 0</div>
+    <div id="timer">Aikaa: 60s</div>
+  </div>
+    <!-- 
+Juhannuspeli – Copyright © 2025 Minna Siurua
+Kaikki oikeudet pidätetään.
+-->
+  <div id="feedback"></div>
+  <div id="endMsg">
+    <div id="endText"></div>
+    <button id="uudestaanBtn">Pelaa uudestaan</button>
+  </div>
+    <canvas id="gameCanvas"></canvas>
+  <div id="overlay">
+    <div id="ohjeetbox">
+      <h2>Juhannuspeli</h2>
+      <p>
+        Kerää saunavihtoja 🌿, makkaroita 🌭 ja radioita 📻 koriin!<br><br>
+        Nuolinäppäimet tai kosketusliike vasemmalle/oikealle liikuttaa koria.<br>
+        Vältä sadepilviä 🌧️!<br><br>
+        Peli kestää 60 sekuntia.<br><br>
+        Iloista juhannusta!
+      </p>
+      <button id="aloitaNappi">Aloita peli</button>
+    </div>
+  </div>
+  <!-- Alareunan LinkedIn-linkki -->
+  <div id="footerlink">
+    <a href="https://www.linkedin.com/in/minnasiurua/" target="_blank" rel="noopener">
+      Tutustu Minnaan LinkedInissä!
+    </a>
+  </div>
+<script>
+  // --- Dynaaminen canvas-koko & skaalaus ---
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  function resizeCanvas() {
+    // Säilytä 400:600 (2:3) suhde, skaalaa max 98vw/70vw, max 420x650, min 240x360
+    let ratio = 400/600;
+    let winW = window.innerWidth * 0.98;
+    let winH = window.innerHeight * 0.75;
+    let w = winW, h = w / ratio;
+    if (h > winH) { h = winH; w = h * ratio; }
+    if (w > 420) { w = 420; h = w / ratio; }
+    if (h > 650) { h = 650; w = h * ratio; }
+    if (w < 240) { w = 240; h = w / ratio; }
+    if (h < 360) { h = 360; w = h * ratio; }
+    canvas.width = Math.round(w);
+    canvas.height = Math.round(h);
+    canvas.style.width = w + "px";
+    canvas.style.height = h + "px";
+  }
+  resizeCanvas();
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    resetPlayer();
+  });
+
+  // --- Pelin muuttujat ja äänet ---
+  const scoreElem = document.getElementById("score");
+  const timerElem = document.getElementById("timer");
+  const endMsg = document.getElementById("endMsg");
+  const endText = document.getElementById("endText");
+  const uudestaanBtn = document.getElementById("uudestaanBtn");
+  const feedbackElem = document.getElementById("feedback");
+  const overlay = document.getElementById("overlay");
+  const aloitaNappi = document.getElementById("aloitaNappi");
+
+  // Lisää omat äänitiedostosi samaan kansioon
+  const goodSound = new Audio("Yeeaani.mp3"); 
+  const badSound = new Audio("Splash.mp3");   
+
+  // Pelaajan kori ja esineet skaalataan canvasin mukaan
+  const goodItems = ["vihta", "makkara", "radio"];
+  const itemImages = {
+    vihta: "🌿",
+    makkara: "🌭",
+    radio: "📻",
+    vesisade: "🌧️"
+  };
+
+  let player = {};
+  let items = [];
+  let score = 0;
+  let gameSpeed = 2.2;
+  let spawnInterval = 900;
+  let timeLeft = 60;
+  let gameActive = false;
+  let itemSpawnTimeout = null;
+  let gameTimer = null;
+
+  // --- Dynaamisesti pelaajan koko ja paikka ---
+  function resetPlayer() {
+    player.width = canvas.width * 0.15;
+    player.height = canvas.height * 0.042;
+    player.x = (canvas.width - player.width) / 2;
+    player.y = canvas.height - player.height - canvas.height * 0.04;
+    player.speed = Math.max(7, canvas.width * 0.022);
+    player.dx = 0;
+  }
+  resetPlayer();
+
+  function drawPlayer() {
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(
+      player.x + player.width/2,
+      player.y + player.height/2 + player.height/8,
+      player.width/2, player.height/2, 0, 0, 2*Math.PI);
+    ctx.fillStyle = "#f3c684";
+    ctx.fill();
+    ctx.strokeStyle = "#b08b51";
+    ctx.lineWidth = 2.3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width/2-6, Math.PI, 2*Math.PI);
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawItems() {
+    items.forEach(item => {
+      ctx.font = Math.round(canvas.width * 0.08) + "px serif";
+      ctx.textBaseline = "top";
+      ctx.fillText(itemImages[item.type], item.x, item.y);
+    });
+  }
+  function drawScore() { scoreElem.textContent = "Pisteet: " + score; }
+  function drawTimer() { timerElem.textContent = "Aikaa: " + timeLeft + "s"; }
+  function clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  function showFeedback(text, good) {
+    feedbackElem.textContent = text;
+    feedbackElem.style.color = good ? "#158557" : "#bb2222";
+    feedbackElem.style.opacity = 1;
+    setTimeout(() => { feedbackElem.style.opacity = 0; }, 900);
+  }
+  function updateItems() {
+    items.forEach(item => item.y += item.speed);
+    items = items.filter(item => {
+      if (
+        item.y + item.height >= player.y &&
+        item.x + item.width >= player.x &&
+        item.x <= player.x + player.width &&
+        item.y < player.y + player.height
+      ) {
+        if (goodItems.includes(item.type)) {
+          score += 1;
+          showFeedback(Math.random() > 0.5 ? "Jee!" : "Jippii!", true);
+          goodSound.currentTime = 0; goodSound.play();
+        } else {
+          score -= 1;
+          showFeedback(Math.random() > 0.5 ? "Voi ei!" : "Splash!", false);
+          badSound.currentTime = 0; badSound.play();
+        }
+        increaseDifficulty();
+        return false;
+      }
+      return item.y < canvas.height;
+    });
+  }
+  function increaseDifficulty() {
+    if (timeLeft < 45) { gameSpeed = 2.8; spawnInterval = 750; }
+    if (timeLeft < 30) { gameSpeed = 3.5; spawnInterval = 600; }
+    if (timeLeft < 15) { gameSpeed = 4.2; spawnInterval = 430; }
+  }
+  function update() {
+    if (!gameActive) return;
+    clear();
+    drawPlayer();
+    drawItems();
+    drawScore();
+    drawTimer();
+
+    player.x += player.dx;
+    if (player.x < 0) player.x = 0;
+    if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+    updateItems();
+
+    requestAnimationFrame(update);
+  }
+  function spawnItem() {
+    if (!gameActive) return;
+    const type = Math.random() < 0.8 ? goodItems[Math.floor(Math.random() * goodItems.length)] : "vesisade";
+    const speed = gameSpeed + Math.random()*1.2;
+    let itemSize = canvas.width * 0.08;
+    items.push({
+      x: 10 + Math.random() * (canvas.width - itemSize - 20),
+      y: -itemSize,
+      type: type,
+      width: itemSize,
+      height: itemSize,
+      speed: speed
+    });
+    itemSpawnTimeout = setTimeout(spawnItem, spawnInterval + Math.random()*330);
+  }
+  function startTimer() {
+    gameTimer = setInterval(() => {
+      timeLeft--;
+      drawTimer();
+      if (timeLeft <= 0) {
+        endGame();
+      }
+    }, 1000);
+  }
+  function endGame() {
+    gameActive = false;
+    clearInterval(gameTimer);
+    clearTimeout(itemSpawnTimeout);
+    endText.innerHTML = `Aika loppui!<br>Pisteesi: <b>${score}</b><br><br>Turvallista Juhannusta!`;
+    endMsg.style.display = "block";
+    uudestaanBtn.style.display = "inline-block";
+  }
+  function keyDown(e) {
+    if (!gameActive) return;
+    if (e.key === "ArrowRight") player.dx = player.speed;
+    else if (e.key === "ArrowLeft") player.dx = -player.speed;
+  }
+  function keyUp(e) {
+    if (!gameActive) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") player.dx = 0;
+  }
+  // Kosketusohjaus mobiilille
+  let touchX = null;
+  canvas.addEventListener("touchstart", e => {
+    if (!gameActive) return;
+    touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+  });
+  canvas.addEventListener("touchmove", e => {
+    if (!gameActive || touchX === null) return;
+    let newX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+    let delta = newX - touchX;
+    player.x += delta * 1.1;
+    if (player.x < 0) player.x = 0;
+    if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+    touchX = newX;
+  });
+  canvas.addEventListener("touchend", () => { touchX = null; });
+
+  document.addEventListener("keydown", keyDown);
+  document.addEventListener("keyup", keyUp);
+
+  aloitaNappi.onclick = startGame;
+  uudestaanBtn.onclick = startGame;
+
+  function startGame() {
+    overlay.style.display = "none";
+    endMsg.style.display = "none";
+    uudestaanBtn.style.display = "none";
+    items = [];
+    score = 0;
+    gameSpeed = 2.2;
+    spawnInterval = 900;
+    timeLeft = 60;
+    gameActive = true;
+    resetPlayer();
+    drawScore();
+    drawTimer();
+    clear();
+    drawPlayer();
+    spawnItem();
+    startTimer();
+    update();
+  }
+
+  // Näytä ohjeet alkuun
+  overlay.style.display = "";
+  endMsg.style.display = "none";
+  uudestaanBtn.style.display = "none";
+  drawScore();
+  drawTimer();
+  clear();
+  drawPlayer();
+</script>
+</body>
+</html>
