@@ -32,7 +32,7 @@
   padding: 38px 30px 36px 30px;
   text-align: center;
   font-size: 1.13em;
-  font-family: Arial, sans-serif;
+  font-family:'Caveat', cursive;
   z-index: 2;
     }
     #topBar {
@@ -45,29 +45,24 @@
     }
     #endMsg {
       position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
-      font-size: 2em; font-weight: bold; color: #15679b; background: #fffefaec;
+      font-size: 1.5em; font-weight: bold; color: #15679b; background: #fffefaec;
       border-radius: 15px; padding: 30px 36px; text-align: center; display: none; z-index: 10;
-      box-shadow: 0 8px 48px #aaaa;
+      box-shadow: 0 8px 48px #aaaa;font-family: 'Caveat', cursive
     }
     #feedback {
       position: fixed; left: 0; right: 0; top: 100px; z-index: 9;
-      text-align: center; font-size: 1.6em; font-weight: bold;
+      text-align: center; font-size: 1.5em; font-weight: bold;
       color: #158557; text-shadow: 0 2px 10px #fff, 0 1px 4px #29975533;
-      pointer-events: none; opacity: 0; transition: opacity 0.22s;
+      pointer-events: none; opacity: 0; transition: opacity 0.22s; 
     }
     #overlay {
         background: url('Maisema.jpg') no-repeat center center fixed;
   background-size: cover;
   background-color: #e6f3fa;
     }
-    #ohjeetbox {
-      max-width: 350px; background: #fffefdcc; border-radius: 16px;
-      box-shadow: 0 4px 24px #aaccff70; padding: 38px 30px 36px 30px;
-      text-align: center; font-size: 1.13em; font-family: Arial, sans-serif;
-    }
     #ohjeetbox h2 {
-      color: #2360a9; margin-top: 0; margin-bottom: 13px;
-      font-size: 2em; letter-spacing: 2px; font-family: Arial Black, Arial, sans-serif;
+      color: #2360a9; margin-top: 0; margin-bottom: 15px;
+      font-size: 1.5em; letter-spacing: 2px; font-family: 'Caveat', cursive;
     }
     #ohjeetbox button {
       margin-top: 28px; background: #43a047; color: white; font-size: 1.1em;
@@ -145,10 +140,10 @@ Kaikki oikeudet pidätetään.
     <div id="ohjeetbox">
       <h2>Juhannuspeli</h2>
       <p>
-        Kerää saunavihtoja 🌿, makkaroita 🌭 ja radioita 📻 koriin!<br><br>
-        Nuolinäppäimet tai kosketusliike vasemmalle/oikealle liikuttaa koria.<br>
-        Vältä sadepilviä 🌧️!<br><br>
-        Peli kestää 60 sekuntia.<br><br>
+        Kerää saunavihtoja 🌿, makkaroita 🌭 ja radioita 📻 koriin! Kokosta 🔥 saat 3 x pisteet! <br><br>
+        Liikuta koria nuolinäppäimillä tai pyyhkäise vasemmalle tai oikealle – riippuen laitteestasi.<br>
+        Vältä sadepilviä 🌧️ ja hyttysiä 🦟!<br><br>
+        Sinulla on 60 sekuntia aikaa!<br><br>
         Iloista juhannusta!
       </p>
       <button id="aloitaNappi">Aloita peli</button>
@@ -157,7 +152,7 @@ Kaikki oikeudet pidätetään.
   <!-- Alareunan LinkedIn-linkki -->
   <div id="footerlink">
     <a href="https://www.linkedin.com/in/minnasiurua/" target="_blank" rel="noopener">
-      Tutustu Minnaan LinkedInissä!
+      Tutustu pelin tekijään Minnaan (B2B-markkinoinnin pro 💪)!
     </a>
   </div>
 <script>
@@ -199,14 +194,19 @@ Kaikki oikeudet pidätetään.
   // Lisää omat äänitiedostosi samaan kansioon
   const goodSound = new Audio("Yeeaani.mp3"); 
   const badSound = new Audio("Splash.mp3");   
+    const fireSound = new Audio("Tuli.mp3");
+    const mosquitoSound = new Audio("Hyttynen.mp3");
 
   // Pelaajan kori ja esineet skaalataan canvasin mukaan
   const goodItems = ["vihta", "makkara", "radio"];
+    const badItems = ["vesisade", "hyttynen"];
   const itemImages = {
     vihta: "🌿",
     makkara: "🌭",
     radio: "📻",
-    vesisade: "🌧️"
+    vesisade: "🌧️",
+    tuli: "🔥",
+    hyttynen: "🦟"
   };
 
   let player = {};
@@ -218,6 +218,11 @@ Kaikki oikeudet pidätetään.
   let gameActive = false;
   let itemSpawnTimeout = null;
   let gameTimer = null;
+let fireCount = 0;
+const minFireItems = 3;
+const maxFireItems = 7;
+let stormTriggered = false; // vain kerran per peli
+let mosquitoSwarmTriggered = false;
 
   // --- Dynaamisesti pelaajan koko ja paikka ---
   function resetPlayer() {
@@ -229,7 +234,43 @@ Kaikki oikeudet pidätetään.
     player.dx = 0;
   }
   resetPlayer();
+    
+function spawnStormCloudRow() {
+  const clouds = 7; // montako pilveä vaakarivissä
+  const safeIndex = Math.floor(Math.random() * clouds); // yks kohta jätetään auki
+  let itemSize = canvas.width * 0.08;
+  let spacing = (canvas.width - 20 - itemSize * clouds) / (clouds - 1);
 
+  for (let i = 0; i < clouds; i++) {
+    if (i === safeIndex) continue; // tämä kohta on turvassa
+    items.push({
+      x: 10 + i * (itemSize + spacing),
+      y: -itemSize,
+      type: "vesisade",
+      width: itemSize,
+      height: itemSize,
+      speed: gameSpeed + Math.random() * 0.8
+    });
+  }
+}
+function spawnMosquitoSwarm() {
+  const swarm = 7;
+  const safeIndex = Math.floor(Math.random() * swarm);
+  let itemSize = canvas.width * 0.08;
+  let spacing = (canvas.width - 20 - itemSize * swarm) / (swarm - 1);
+
+  for (let i = 0; i < swarm; i++) {
+    if (i === safeIndex) continue; // väylä pakoon
+    items.push({
+      x: 10 + i * (itemSize + spacing),
+      y: -itemSize,
+      type: "hyttynen",
+      width: itemSize,
+      height: itemSize,
+      speed: gameSpeed + Math.random() * 1.2
+    });
+  }
+}
   function drawPlayer() {
     ctx.save();
     ctx.beginPath();
@@ -273,15 +314,27 @@ Kaikki oikeudet pidätetään.
         item.x <= player.x + player.width &&
         item.y < player.y + player.height
       ) {
-        if (goodItems.includes(item.type)) {
-          score += 1;
-          showFeedback(Math.random() > 0.5 ? "Jee!" : "Jippii!", true);
-          goodSound.currentTime = 0; goodSound.play();
-        } else {
-          score -= 1;
-          showFeedback(Math.random() > 0.5 ? "Voi ei!" : "Splash!", false);
-          badSound.currentTime = 0; badSound.play();
-        }
+            if (goodItems.includes(item.type)) {
+      score += 1;
+      showFeedback(Math.random() > 0.5 ? "Jee!" : "Jippii!", true);
+      goodSound.currentTime = 0;
+      goodSound.play();
+    } else if (item.type === "tuli") {
+      score += 3;
+      showFeedback("🔥 Fire! 3x!", true);
+      fireSound.currentTime = 0;
+      fireSound.play();
+    } else if (item.type === "hyttynen") {
+    score -= 1;
+    showFeedback(Math.random() > 0.5 ? "Bziii!" : "Auts!", false);
+     mosquitoSound.currentTime = 0;
+  mosquitoSound.play();
+    } else {
+      score -= 1;
+      showFeedback(Math.random() > 0.5 ? "Voi ei!" : "Splash!", false);
+      badSound.currentTime = 0;
+      badSound.play();
+    }
         increaseDifficulty();
         return false;
       }
@@ -289,9 +342,9 @@ Kaikki oikeudet pidätetään.
     });
   }
   function increaseDifficulty() {
-    if (timeLeft < 45) { gameSpeed = 2.8; spawnInterval = 750; }
-    if (timeLeft < 30) { gameSpeed = 3.5; spawnInterval = 600; }
-    if (timeLeft < 15) { gameSpeed = 4.2; spawnInterval = 430; }
+    if (timeLeft < 45) { gameSpeed = 3.5; spawnInterval = 600; }
+    if (timeLeft < 30) { gameSpeed = 5.5; spawnInterval = 500; }
+    if (timeLeft < 15) { gameSpeed = 7.5; spawnInterval = 300; }
   }
   function update() {
     if (!gameActive) return;
@@ -309,35 +362,81 @@ Kaikki oikeudet pidätetään.
 
     requestAnimationFrame(update);
   }
-  function spawnItem() {
-    if (!gameActive) return;
-    const type = Math.random() < 0.8 ? goodItems[Math.floor(Math.random() * goodItems.length)] : "vesisade";
-    const speed = gameSpeed + Math.random()*1.2;
-    let itemSize = canvas.width * 0.08;
-    items.push({
-      x: 10 + Math.random() * (canvas.width - itemSize - 20),
-      y: -itemSize,
-      type: type,
-      width: itemSize,
-      height: itemSize,
-      speed: speed
-    });
-    itemSpawnTimeout = setTimeout(spawnItem, spawnInterval + Math.random()*330);
+function spawnItem() {
+// Kutsu tämä vain kerran satunnaisella hetkellä (esim. kun starta15–45 sekuntia jäljellä)
+if (!stormTriggered && timeLeft < Math.random() * 30 + 15) {
+  spawnStormCloudRow();
+  stormTriggered = true;
+}
+if (!mosquitoSwarmTriggered && timeLeft < Math.random() * 15 + 5) {
+  spawnMosquitoSwarm();
+  mosquitoSwarmTriggered = true;
+}
+  if (!gameActive) return;
+
+  let type;
+  const chance = Math.random();
+
+  // Laske jäljellä olevat frame-spawnit (sekunteina)
+  const secondsLeft = timeLeft;
+  const itemsLeftToSpawn = maxFireItems - fireCount;
+  const secondsPerFire = Math.floor(60 / minFireItems);
+
+  // Jos peli lähestyy loppua ja minFireItems ei vielä täynnä, pakota kokkoja tulemaan
+  if (
+    (fireCount < minFireItems && secondsLeft <= (minFireItems - fireCount) * secondsPerFire + 1)
+  ) {
+    type = "tuli";
+    fireCount++;
   }
-  function startTimer() {
-    gameTimer = setInterval(() => {
-      timeLeft--;
-      drawTimer();
-      if (timeLeft <= 0) {
-        endGame();
-      }
-    }, 1000);
+  else if (chance < 0.7) {
+    type = goodItems[Math.floor(Math.random() * goodItems.length)];
+  }
+     else if (chance < 0.8) {
+  type = "hyttynen";     
+  }
+    else if (chance < 0.9) {
+    type = "vesisade";
+  }
+  else if (fireCount < maxFireItems) {
+    type = "tuli";
+    fireCount++;
+  }
+  else {
+    type = goodItems[Math.floor(Math.random() * goodItems.length)];
+  }
+
+  const baseSpeed = gameSpeed + Math.random() * 1.2;
+  const speed = (type === "tuli") ? baseSpeed * 2 : baseSpeed;
+  let itemSize = canvas.width * 0.08;
+
+  items.push({
+    x: 10 + Math.random() * (canvas.width - itemSize - 20),
+    y: -itemSize,
+    type: type,
+    width: itemSize,
+    height: itemSize,
+    speed: speed
+  });
+
+  itemSpawnTimeout = setTimeout(spawnItem, spawnInterval + Math.random() * 330);
+ }
+
+function startTimer() {
+  gameTimer = setInterval(() => {
+    timeLeft--;
+    drawTimer();
+    firedThisSecond = false; // nollataan joka sekunti
+    if (timeLeft <= 0) {
+      endGame();
+    }
+  }, 1000);
   }
   function endGame() {
     gameActive = false;
     clearInterval(gameTimer);
     clearTimeout(itemSpawnTimeout);
-    endText.innerHTML = `Aika loppui!<br>Pisteesi: <b>${score}</b><br><br>Turvallista Juhannusta!`;
+    endText.innerHTML = `Aika loppui!<br>Pisteesi: <b>${score}</b><br><br>💚`;
     endMsg.style.display = "block";
     uudestaanBtn.style.display = "inline-block";
   }
@@ -382,6 +481,9 @@ Kaikki oikeudet pidätetään.
     gameSpeed = 2.2;
     spawnInterval = 900;
     timeLeft = 60;
+    fireCount = 0;          
+    mosquitoSwarmTriggered = false;
+    stormTriggered = false; 
     gameActive = true;
     resetPlayer();
     drawScore();
